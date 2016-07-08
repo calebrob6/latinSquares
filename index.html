@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Latin Square Solver</title>
+
+  <!-- Bootstrap -->
+  <link href="css/bootstrap.min.css" rel="stylesheet">
+  <link href="css/bootstrap-theme.min.css" rel="stylesheet">
+
+  <!-- JQueryUI -->
+  <link href="css/jquery-ui.min.css" rel="stylesheet">
+  <link href="css/jquery-ui.theme.min.css" rel="stylesheet">
+
+
+  <style type="text/css">
+    #renderCanvas {
+      border: 1px solid black;
+    }
+
+    html {
+      position: relative;
+      min-height: 100%;
+    }
+
+    body {
+      margin-bottom: 60px;
+    }
+
+    .footer {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      height: 60px;
+      background-color: #FBFBFB;
+    }
+
+    body > .container {
+      padding: 80px 15px 0;
+    }
+
+    .container .text-muted {
+      margin: 20px 0;
+    }
+
+    .footer > .container {
+      padding-right: 15px;
+      padding-left: 15px;
+    }
+
+    .navbar-color {
+      background-color: #F8F8F8;
+    }
+
+    .navbar-color .navbar-nav>.active>a, .personal-navbar .navbar-nav>.open>a {
+      background-image: -webkit-linear-gradient(top,#dbdbdb 0,#e2e2e2 100%);
+      background-image: -o-linear-gradient(top,#dbdbdb 0,#e2e2e2 100%);
+      background-image: -webkit-gradient(linear,left top,left bottom,from(#dbdbdb),to(#e2e2e2));
+      background-image: linear-gradient(to bottom,#dbdbdb 0,#e2e2e2 100%);
+      filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffdbdbdb', endColorstr='#ffe2e2e2', GradientType=0);
+      background-repeat: repeat-x;
+      -webkit-box-shadow: inset 0 3px 9px rgba(0,0,0,.075);
+      box-shadow: inset 0 3px 9px rgba(0,0,0,.075);
+    }
+
+  </style>
+
+</head>
+
+<body>
+
+  <nav class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <a class="navbar-brand" href="#">Latin Square Solver</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="row">
+
+      <div class="col-md-3">
+        <div class="row">
+          <div class="col-md-12">
+
+            <h4>Parameter Values</h4>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Key</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>p</td>
+                  <td><span id="lblPval"></span></td>
+                </tr>
+                <tr>
+                  <td>N</td>
+                  <td><span id="lblNval"></span></td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h4>Computed Values</h4>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Key</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>C<sup>B</sup></td>
+                  <td><span id="lblBetweennessCentrality"></span></td>
+                </tr>
+              </tbody>
+            </table>
+
+            <hr/>
+            <h4>Algorithm:</h4>
+            <p>
+              Implementation of the model described in [1]:
+            </p>
+            <ol>
+              <li>
+                Place <i>N</i><sup>2</sup> nodes on an <i>N</i> by <i>N</i> rectangular grid
+              </li>
+              <li>
+                Examine each node, and with probability <i>p</i>, move the node to a random position in the rectangle
+              </li>
+              <li>
+                For each node, <i>i</i>:
+                <ul>
+                  <li>
+                    Choose <i>j</i> and <i>k</i>, the two nearest nodes among those not yet connected to <i>i</i>
+                  </li>
+                  <li>
+                    Add two new edges, <i>(i,j)</i> and <i>(i,k)</i>, to the graph
+                  </li>
+                </ul>
+              </li>
+              <li>
+                Compute the average betweenness centrality, <i>C</i><sup>B</sup>, of the generated graph
+              </li>
+            </ol>
+            <p>
+              [1] Crucitti, P., Latora, V., &amp; Porta, S. (2006). Centrality measures in spatial networks of urban streets. Physical Review E, 73(3), 036125. <a href="http://arxiv.org/pdf/physics/0504163.pdf">http://arxiv.org/pdf/physics/0504163.pdf</a>.
+            </p>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-9">
+        <div class="row">
+
+
+          <div class="col-md-12 text-center">
+            <canvas id="renderCanvas">Please get a newer browser a.s.a.p.</canvas>
+          </div>
+
+          <div class="col-md-12">
+            <div class="row">
+              <div class="col-md-offset-3 col-md-2 text-center">
+                <div style="margin-top:10px">
+                  p
+                </div>
+              </div>
+              <div class="col-md-4 text-center">
+                <div style="margin-top:15px">
+                  <div id="sliderP"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+
+          <div class="col-md-12">
+            <div class="row">
+              <div class="col-md-offset-3 col-md-2 text-center">
+                <div style="margin-top:10px">
+                  N
+                </div>
+              </div>
+              <div class="col-md-4 text-center">
+                <div style="margin-top:15px">
+                  <div id="sliderN"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <p class="text-muted">Caleb Robinson, 2016</p>
+    </div>
+  </footer>
+
+  <script src="js/jquery.min.js"></script>
+  <script src="js/jquery-ui.min.js"></script>
+  <script src="js/jsnetworkx.js"></script>
+  <script src="js/bootstrap.min.js"></script>
+
+  <script type="text/javascript">
+
+  	var canvas,context;
+
+    var p;
+    var N;
+
+    var nodes = [];
+    var edges = [];
+
+    var stepX, stepY = 0;
+    var running = true;
+
+    var Edge = function(n1,n2){
+  		this.color = "#000";
+  		this.x1 = n1.x;
+  		this.y1 = n1.y;
+      this.x2 = n2.x;
+  		this.y2 = n2.y;
+  	}
+
+    Edge.prototype.draw = function(){
+      context.strokeStyle = this.color;
+  		context.beginPath();
+      context.moveTo(this.x1,this.y1);
+      context.lineTo(this.x2,this.y2);
+  		context.closePath();
+  		context.stroke();
+    }
+
+  	var Node = function(i){
+  		//basic props
+      this.id = i;
+  		this.width=10;
+  		this.height=10;
+  		this.color = "#f00";
+  		this.x = canvas.width/2 - this.width/2;
+  		this.y = canvas.height/2;
+      this.r = 4;
+
+      this.edges = [];
+  	}
+
+  	Node.prototype.draw = function(){
+      context.fillStyle = this.color;
+  		context.beginPath();
+  		context.arc(this.x, this.y, this.r, 0, Math.PI*2, true);
+  		context.closePath();
+  		context.fill();
+    }
+
+  	$(document).ready(function(){
+  		initAll();
+  	})
+
+    function shuffleArray(array) {
+      for (var i = array.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var temp = array[i];
+        array[i] = array[j];
+        array[j] = temp;
+      }
+      return array;
+    }
+
+    function dist(n1, n2){
+  	   return Math.sqrt(Math.pow(n2.y-n1.y,2) + Math.pow(n2.x-n1.x,2));
+  	}
+
+    function isConnected(currentNode,otherNode){
+      for(var i=0;i<currentNode.edges.length;i++){
+        if(currentNode.edges[i].id == otherNode.id) return true;
+      }
+      return false;
+    }
+
+    function randRange(min,max){
+  		return Math.floor((Math.random()*max)+min);
+  	}
+
+    function updateP(val){
+      p=val/100;
+      $("#lblPval").html(p);
+    }
+
+    function updateN(val){
+      N=val;
+      stepX = canvas.width/N;
+      stepY = canvas.height/N;
+      $("#lblNval").html(N);
+    }
+
+    function newGraph(){
+      running = false;
+
+      nodes = [];
+      edges = [];
+
+      for(var i=0;i<N;i++){
+        for(var j=0;j<N;j++){
+          var tempNode = new Node(i*N+j);
+          //console.debug(i*N+j)
+
+          tempNode.x = (i*stepX) + 0.5*(stepX);
+          tempNode.y = (j*stepY) + 0.5*(stepY);
+
+          if(Math.random()<p){
+            tempNode.x = randRange(0+(0.5*stepX),canvas.width-(1.5*stepX))
+            tempNode.y = randRange(0+(0.5*stepY),canvas.height-(1.5*stepY))
+          }
+
+          nodes.push(tempNode);
+        }
+      }
+
+      nodeVisitOrder = [];
+      for(var i=0;i<nodes.length;i++){
+        nodeVisitOrder.push(i);
+      }
+      shuffleArray(nodeVisitOrder)
+
+      for(var i_=0;i_<nodeVisitOrder.length;i_++){
+        i = nodeVisitOrder[i_];
+
+        var firstClosest = null;
+        var firstClosestDistance = Infinity;
+        var secondClosest = null;
+        var secondClosestDistance = Infinity;
+
+        var currentNode = nodes[i];
+        for(var j=0;j<nodes.length;j++){
+          var otherNode = nodes[j];
+          if(j!=i && !isConnected(currentNode,otherNode)){
+
+            var d = dist(currentNode,otherNode);
+
+            if(d<firstClosestDistance){
+              firstClosest = otherNode;
+              firstClosestDistance = d;
+            }else if(d<secondClosestDistance){
+              secondClosest = otherNode;
+              secondClosestDistance = d;
+            }
+
+
+          }
+        }
+
+        currentNode.edges.push(firstClosest)
+        currentNode.edges.push(secondClosest)
+
+        firstClosest.edges.push(currentNode)
+        secondClosest.edges.push(currentNode)
+
+        edges.push(new Edge(currentNode,firstClosest));
+        edges.push(new Edge(currentNode,secondClosest));
+
+      }
+
+
+      /*
+        Compute average betweenness centrality
+      */
+      var G = new jsnx.Graph();
+      for(var i=0;i<nodes.length;i++){
+        G.addNode(nodes[i].id);
+      }
+      for(var i=0;i<nodes.length;i++){
+        for(var j=0;j<nodes[i].edges.length;j++){
+            G.addEdge(nodes[i].id,nodes[i].edges[j].id);
+        }
+      }
+      betweennessCentrality = jsnx.betweennessCentrality(G);
+      totalBetweennessCentrality = 0;
+      for(var i=0;i<nodes.length;i++){
+        totalBetweennessCentrality+=betweennessCentrality._numberValues[i];
+      }
+      averageBetweennessCentrality = totalBetweennessCentrality/nodes.length;
+      $("#lblBetweennessCentrality").html(averageBetweennessCentrality)
+
+      running = true;
+      renderLoop();
+    }
+
+
+  	function initAll(){
+  		canvas = $("#renderCanvas")[0];
+  		context = canvas.getContext("2d");
+  		canvas.width = 600;
+  		canvas.height = 450;
+
+      function handleSlider(event, ui){
+        updateP(ui.value);
+        newGraph();
+      }
+
+
+      $("#sliderP").slider({
+        slide: function(event, ui){
+          updateP(ui.value);
+          newGraph();
+        }
+      });
+      updateP(0);
+
+      $("#sliderN").slider({
+        slide: function(event, ui){
+          updateN(ui.value);
+          newGraph();
+        },
+        min: 5,
+        max: 15
+      });
+      updateN(5);
+
+      stepX = canvas.width/N;
+      stepY = canvas.height/N;
+
+      newGraph();
+  	}
+
+
+
+    function renderLoop(){
+		if(running){
+			context.clearRect(0,0,canvas.width,canvas.height);
+
+      for(var i=0;i<edges.length;i++){
+				edges[i].draw();
+			}
+
+      for(var i=0;i<nodes.length;i++){
+				nodes[i].draw();
+			}
+
+			setTimeout(renderLoop,10);
+		}
+	}
+
+  </script>
+</body>
+
+</html>
