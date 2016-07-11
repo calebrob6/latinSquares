@@ -130,8 +130,8 @@
                     <td><span id="lblNumRestarts"></span></td>
                   </tr>
                   <tr>
-                    <td>time taken</td>
-                    <td><span id="lblTimeTaken"></span></td>
+                    <td>solved</td>
+                    <td><span id="lblSolved"></span></td>
                   </tr>
                 </tbody>
               </table>
@@ -192,8 +192,13 @@
           </div>
 
           <div class="col-md-12 text-center" style="margin-top:10px;">
-            <button class="btn btn-default">Run Simulation</button>
+            <button class="btn btn-default" id="btnSolve">Run Simulation</button>
           </div>
+
+          <div class="col-md-12 text-center" style="margin-top:20px;" id="pnlColors">
+            
+          </div>
+
 
         </div>
       </div>
@@ -232,6 +237,10 @@
       this.y = pt.y;
       this.width = stepX;
       this.height = stepY;
+    }
+
+    Cell.prototype.updateLocked = function(){
+      this.locked = (this.val==0) ? false : true; 
     }
 
     Cell.prototype.draw = function() {
@@ -280,6 +289,13 @@
       for (var i = 0; i < n; i++) {
         colors.push(getRandomColor());
       }
+
+
+      $("#pnlColors").html("");
+      for(var i=1;i<=n;i++){
+        $("#pnlColors").append("<span style='padding:5px;display:inline-block;width:40px;background-color:"+colors[i]+";'>"+i+"</span>");
+      }
+
     }
 
     function doubleIndexToSingle(pt){
@@ -297,55 +313,56 @@
     }
 
     function isLegal(){
-
-      //check each row
       for (var i = 0; i < n; i++) {
-        var mySet = new Set();
-        for (var j = 0; j < n; j++) {
+        if(!checkLine(i,true)) return false;
+        if(!checkLine(i,false)) return false;
+      }
+      return true;
+    }
 
-          pt = {
-            "x": i,
-            "y": j
+    function isSolved(){
+      var target = n*(n+1)/2;
+      console.debug(target);
+      for (var i = 0; i < n; i++) {
+        var rowSum = 0;
+        var colSum = 0;
+        for (var j = 0; j < n; j++) {
+          pt = {"x": j, "y": i};
+          cellIndex = doubleIndexToSingle(pt);
+          cellVal = cells[cellIndex].val;
+          rowSum+=cellVal;
+
+          pt = {"x": i, "y": j};
+          cellIndex = doubleIndexToSingle(pt);
+          cellVal = cells[cellIndex].val;
+          colSum+=cellVal;
+        }
+        if(rowSum!=target || colSum!=target) return false; 
+      }
+      return true;
+    }
+
+
+    function checkLine(j, col){
+      var used = []
+      for(var i=0;i<n+2;i++){
+        used.push(0);
+      }
+
+      for(var i=0; i<n; i++){
+          pt = {"x": null, "y": null};
+          if(col===true){
+            pt = {"x": i, "y": j};
+          }else{
+            pt = {"x": j, "y": i};
           }
 
           cellIndex = doubleIndexToSingle(pt);
           cellVal = cells[cellIndex].val;
 
-          if(cellVal!=0){
-            if(mySet.has(cellVal)){
-              return false;
-            }else{
-              mySet.add(cellVal);
-            }  
-          }
-
-        }
+          if(cellVal!=0 && used[cellVal]!=0) return false;
+          used[cellVal]=1;
       }
-      //check each row
-      for (var i = 0; i < n; i++) {
-        var mySet = new Set();
-        for (var j = 0; j < n; j++) {
-
-          pt = {
-            "x": j,
-            "y": i
-          }
-
-          cellIndex = doubleIndexToSingle(pt);
-          cellVal = cells[cellIndex].val;
-
-          if(cellVal!=0){
-            if(mySet.has(cellVal)){
-              return false;
-            }else{
-              mySet.add(cellVal);
-            }  
-          }
-
-        }
-      }
-
-
       return true;
     }
 
@@ -371,9 +388,25 @@
       //create random map
       for (var i = 0; i < cells.length; i++) {
         if (Math.random() < p) {
-          cells[i].val = randRange(1, n + 1);
+          cells[i].val = randRange(1, n);
         }
       }
+
+      /*
+      //Almost solved test case
+      i=0;
+      cells[i++].val = 1;
+      cells[i++].val = 3;
+      cells[i++].val = 2;
+
+      cells[i++].val = 3;
+      cells[i++].val = 2;
+      cells[i++].val = 1;
+
+      cells[i++].val = 2;
+      cells[i++].val = 1;
+      cells[i++].val = 3;
+      */
 
       //check to make sure this is not illegal
       if (!isLegal()) {
@@ -381,11 +414,93 @@
         newProblem();
       }
 
+      for(var i=0;i<cells.length;i++){
+        cells[i].updateLocked();
+      }
 
       running = true;
       renderLoop();
     }
 
+    function findNext(x){
+      for(var i=x;i<cells.length;i++){
+        if(!cells[i].locked) return i;
+      }
+      return null;
+    }
+
+    function solveBoard2(i){
+      cellIndex = i;
+      if(cells[cellIndex].locked){
+        if(cellIndex<cells.length){
+          solveBoard2(cellIndex+1);
+        }
+      }
+
+      for(var j=0;j<n;j++){
+
+        cells[cellIndex].val = j
+
+      }
+
+    }
+
+    function solveBoard(){
+      console.info("Starting solver...");
+
+      var stack = [];
+
+      var startingCell = findNext(0);
+      stack.push([startingCell,0]);
+
+      var solved="false";
+      var backtracks = 0;
+
+      while(stack.length>0 && running){
+        var currentCell = stack.pop();
+
+        var cellIndex = currentCell[0];
+        var cellValue = currentCell[1];
+
+        console.debug(currentCell);
+        //console.debug(cellIndex+" "+cellValue);
+
+        if(cellValue<=n){ //if this cell hasn't been explored all the way
+          cells[cellIndex].val = cellValue + 1;
+
+          if(checkLine(cells[cellIndex].x,true) && checkLine(cells[cellIndex].y,false)){ //legal move
+            stack.push([cellIndex,cellValue+1]);
+
+            var nextCell = findNext(cellIndex+1)
+            if(nextCell!=null){
+              stack.push([nextCell,cells[nextCell].val]);
+            }else{
+              //setTimeout(renderCall,10);
+              renderCall();
+              alert("test")
+              if(isSolved()){
+                console.debug("Solved");
+                solved="true"
+                break;
+              }
+              //we found the answer or it is impossible
+              //stack = []
+            }
+
+          }else{ //illegal move
+            cells[cellIndex].val = cellValue;
+            stack.push([cellIndex,cellValue+1]);
+          }
+
+        }else{
+          cells[cellIndex].val = 0;
+          backtracks+=1;
+          $("#lblNumBacktracks").html(backtracks);
+        }
+
+      }
+      $("#lblSolved").html(solved);
+    }
 
     function initAll() {
       canvas = $("#renderCanvas")[0];
@@ -406,10 +521,12 @@
           updateN(ui.value);
           newProblem();
         },
-        min: 5,
+        min: 3,
         max: 15
       });
-      updateN(5);
+      updateN(3);
+
+      $("#btnSolve").click(solveBoard);
 
       stepX = canvas.width / n;
       stepY = canvas.height / n;
@@ -417,13 +534,17 @@
       newProblem();
     }
 
-    function renderLoop() {
-      if (running) {
-        context.clearRect(0, 0, canvas.width, canvas.height);
+    function renderCall(){
+      context.clearRect(0, 0, canvas.width, canvas.height);
 
         for (var i = 0; i < cells.length; i++) {
           cells[i].draw();
         }
+    }
+
+    function renderLoop() {
+      if (running) {
+        renderCall();
 
         setTimeout(renderLoop, 10);
       }
